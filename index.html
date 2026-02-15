@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For My Love</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap"
+        rel="stylesheet">
+    <style>
+        /* --- CSS VARIABLES & RESET --- */
+        :root {
+            --bg-color: #f3e5d8;
+            --book-bg: #fdfbf7;
+            --accent-color: #d4a5a5;
+            --text-color: #4a4a4a;
+            --gold: #c5a059;
+            --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.05);
+            --shadow-deep: 0 20px 50px rgba(0, 0, 0, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Lora', serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#e0d0c0 1px, transparent 1px);
+            background-size: 20px 20px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: background-color 1s ease;
+        }
+
+        body.lights-out {
+            background-color: #1a1512;
+            background-image: none;
+        }
+
+        /* --- JOURNAL CONTAINER --- */
+        .journal {
+            width: 90%;
+            max-width: 450px;
+            height: 600px;
+            background: var(--book-bg);
+            border-radius: 10px 20px 20px 10px;
+            box-shadow: var(--shadow-deep);
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s ease;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .journal::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 20px;
+            background: linear-gradient(90deg, #e6dad0, #fff, #e6dad0);
+            z-index: 10;
+            border-radius: 10px 0 0 10px;
+        }
+
+        /* --- PAGES --- */
+        .page {
+            position: absolute;
+            top: 0;
+            left: 20px;
+            right: 0;
+            bottom: 0;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--book-bg);
+            background-image: linear-gradient(#f1f1f1 1px, transparent 1px);
+            background-size: 100% 2em;
+            transition: opacity 0.5s ease, transform 0.6s ease;
+            transform-origin: left center;
+            opacity: 0;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        .page.active {
+            opacity: 1;
+            pointer-events: all;
+            transform: rotateY(0deg);
+            z-index: 5;
+        }
+
+        .page.turned {
+            transform: rotateY(-180deg);
+            opacity: 0;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Dancing Script', cursive;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+
+        h1 {
+            font-size: 3rem;
+            transform: rotate(-5deg);
+        }
+
+        h2 {
+            font-size: 2rem;
+        }
+
+        p {
+            font-size: 1.1rem;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* --- WIDGETS --- */
+        .lock-container {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .lock-container:hover {
+            transform: scale(1.1);
+        }
+
+        .heart-lock {
+            font-size: 4rem;
+            color: white;
+            text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.1);
+        }
+
+        .keyhole {
+            width: 10px;
+            height: 15px;
+            background: white; /* CHANGED: White */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -40%);
+            border-radius: 5px 5px 0 0;
+            /* CHANGED: Added drop-shadow filter to create contrast against white heart */
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+        }
+
+        .keyhole::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: -2px;
+            width: 14px;
+            height: 10px;
+            background: white; /* CHANGED: White */
+            border-radius: 50%;
+        }
+
+        /* --- NEW SCALABLE GALLERY CSS --- */
+        .photo-string {
+            width: 100%;
+            height: 2px;
+            background: #888;
+            margin-bottom: 15px;
+        }
+
+        /* Container uses Flexbox + Scroll to handle any number of images */
+        .polaroid-container {
+            width: 100%;
+            height: 320px;
+            /* Fixed height for scroll area */
+            display: flex;
+            flex-wrap: wrap;
+            /* Allows wrapping */
+            justify-content: center;
+            align-content: flex-start;
+            /* Starts from top */
+            gap: 15px;
+            /* Space between photos */
+            overflow-y: auto;
+            /* Scrollable if too many photos */
+            padding: 10px;
+            perspective: 1000px;
+            /* Needed for 3D flip */
+        }
+
+        /* Custom Scrollbar for gallery */
+        .polaroid-container::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .polaroid-container::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 5px;
+        }
+
+        .polaroid {
+            position: relative;
+            /* Changed from absolute to relative */
+            width: 140px;
+            height: 180px;
+            background: white;
+            padding: 10px 10px 30px 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            /* Key for flipping */
+            flex-shrink: 0;
+            /* Prevents squishing */
+        }
+
+        /* Auto-rotation for messy look */
+        .polaroid:nth-child(odd) {
+            transform: rotate(-3deg);
+        }
+
+        .polaroid:nth-child(even) {
+            transform: rotate(3deg);
+        }
+
+        .polaroid:hover {
+            z-index: 10;
+            transform: scale(1.05) rotate(0deg);
+        }
+
+        /* Flip State */
+        .polaroid.flipped {
+            transform: rotateY(180deg);
+        }
+
+        /* Front and Back Faces */
+        .polaroid-front,
+        .polaroid-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            backface-visibility: hidden;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 10px 25px 10px;
+            /* Matching padding */
+        }
+
+        .polaroid-front img {
+            width: 100%;
+            height: 110px;
+            object-fit: cover;
+            filter: sepia(20%);
+            border: 1px solid #eee;
+        }
+
+        .polaroid-caption {
+            font-family: 'Dancing Script', cursive;
+            font-size: 1.1rem;
+            color: #555;
+            margin-top: auto;
+            margin-bottom: 5px;
+        }
+
+        .polaroid-back {
+            transform: rotateY(180deg);
+            justify-content: center;
+            padding: 15px;
+            border: 1px solid #eee;
+        }
+
+        /* --- CAKE FIXES --- */
+        .cake-plate {
+            width: 180px;
+            height: 180px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.05), 0 5px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .cake-group {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .cupcake-base {
+            width: 100px;
+            height: 70px;
+            background: #d4a5a5;
+            border-radius: 5px 5px 30px 30px;
+            position: relative;
+            background-image: repeating-linear-gradient(90deg, transparent 0, transparent 10px, rgba(255, 255, 255, 0.2) 10px, rgba(255, 255, 255, 0.2) 12px);
+            z-index: 1;
+        }
+
+        .cupcake-frosting {
+            width: 110px;
+            height: 50px;
+            background: #fce4ec;
+            border-radius: 50px 50px 10px 10px;
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: inset 0 -5px 10px rgba(0, 0, 0, 0.05);
+            z-index: 2;
+        }
+
+        /* CHERRY POSITION FIXED: Lowered significantly */
+        .cherry {
+            width: 25px;
+            height: 25px;
+            background: #d32f2f;
+            border-radius: 50%;
+            position: absolute;
+            top: -15px;
+            /* Changed from -25px to -15px to sit ON the cake */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 4;
+            cursor: pointer;
+            box-shadow: inset -2px -2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .candle {
+            width: 8px;
+            height: 40px;
+            background: repeating-linear-gradient(45deg, gold, gold 5px, #fbc02d 5px, #fbc02d 10px);
+            position: absolute;
+            top: -45px;
+            /* Changed from -55px */
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            z-index: 3;
+            border-radius: 2px;
+        }
+
+        .flame {
+            width: 14px;
+            height: 20px;
+            background: orange;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            position: absolute;
+            top: -15px;
+            /* Changed from -20px */
+            left: 50%;
+            transform: translateX(-50%) scale(0.8);
+            opacity: 0;
+            box-shadow: 0 0 10px orange;
+            transition: opacity 0.5s;
+        }
+
+        .flame.lit {
+            opacity: 1;
+            animation: flicker 0.5s infinite alternate;
+        }
+
+        @keyframes flicker {
+            from {
+                opacity: 0.9;
+                transform: translateX(-50%) scale(1);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(-50%) scale(1.15);
+            }
+        }
+
+        /* Fairy Lights */
+        .fairy-lights {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        .light {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 15px #fff, 0 0 30px gold;
+            animation: float-light 5s infinite;
+        }
+
+        /* --- REASONS WHY --- */
+        .reasons-container {
+            width: 100%;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .reasons-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .sticker {
+            width: 70px;
+            height: 70px;
+            background: #fff;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, background-color 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .sticker:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .sticker.active-sticker {
+            border-color: var(--accent-color);
+            background-color: #fff0f5;
+        }
+
+        .reason-display-area {
+            width: 100%;
+            min-height: 80px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Dancing Script', cursive;
+            font-size: 1.4rem;
+            color: var(--text-color);
+            border: 1px dashed var(--accent-color);
+            transition: opacity 0.3s;
+        }
+
+        /* --- NAV --- */
+        .nav-btn {
+            background: transparent;
+            border: 2px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-family: 'Lora', serif;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: auto;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .bookmark {
+            position: absolute;
+            right: 20px;
+            top: 0;
+            width: 30px;
+            height: 50px;
+            background: #d4a5a5;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+            z-index: 6;
+            cursor: pointer;
+            transition: top 0.3s;
+        }
+
+        .bookmark:hover {
+            top: -10px;
+        }
+
+        .music-player {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            color: #aaa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="fairy-lights" id="fairy-lights"></div>
+
+    <div class="journal">
+        <div class="bookmark" onclick="resetBook()" title="Go to Start"></div>
+
+        <div id="page-1" class="page active" style="background-color: var(--accent-color); color: white;">
+            <div style="border: 2px solid white; padding: 40px; border-radius: 10px;">
+                <h1 style="color: white; transform: rotate(0);">Our Story</h1>
+                <p style="color: white;">A collection of moments</p>
+                <div class="lock-container" onclick="unlockBook()">
+                    <div class="heart-lock">♥<div class="keyhole"></div>
+                    </div>
+                    <p style="color: white; font-size: 0.9rem; margin-top: 10px;">Click to Open</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-2" class="page">
+            <h1>Happy Birthday, <br>My Love</h1>
+            <p>I wrote this little digital journal because paper wasn't enough to hold all my love for you.</p>
+            <div style="font-size: 3rem; margin: 30px; color: var(--accent-color);">✎...</div>
+            <p>Ready to walk down memory lane?</p>
+            <button class="nav-btn" onclick="turnPage(2, 3)">Turn Page</button>
+        </div>
+
+        <div id="page-3" class="page">
+            <h2>And through all of this… we became us.</h2>
+            <div class="photo-string"></div>
+
+            <div class="polaroid-container">
+                <div class="polaroid" onclick="flipPhoto(this)">
+                    <div class="polaroid-front">
+                        <img src="3.jpeg" alt="Us">
+                        <div class="polaroid-caption">The beginning</div>
+                    </div>
+                    <div class="polaroid-back">
+                        <h3>First Date</h3>
+                        <p style="font-size: 0.7rem;">Three unnecessary rounds… one nervous arm around you, and my heart
+                            quietly choosing you.</p>
+                    </div>
+                </div>
+
+                <div class="polaroid" onclick="flipPhoto(this)">
+                    <div class="polaroid-front">
+                        <img src="4.jpeg" alt="Travel">
+                        <div class="polaroid-caption">First Date</div>
+                    </div>
+                    <div class="polaroid-back">
+                        <h3>Pinky finger Hold</h3>
+                        <p style="font-size: 0.7rem;">First date. School uniform. Ice cream. Pinky holding hands, and
+                            “gentleman hu main” like a boss.</p>
+                    </div>
+                </div>
+
+                <div class="polaroid" onclick="flipPhoto(this)">
+                    <div class="polaroid-front">
+                        <img src="2.jpeg" alt="Fun">
+                        <div class="polaroid-caption">Second Date</div>
+                    </div>
+                    <div class="polaroid-back">
+                        <h3>Tastyy</h3>
+                        <p style="font-size: 0.7rem;">One fast kiss… and my heart never went back to normal.</p>
+                    </div>
+                </div>
+
+                <div class="polaroid" onclick="flipPhoto(this)">
+                    <div class="polaroid-front">
+                        <img src="1.jpeg" alt="Fun">
+                        <div class="polaroid-caption">Silly Edits</div>
+                    </div>
+                    <div class="polaroid-back">
+                        <h3>LOL<3</h3>
+                        <p style="font-size: 0.7rem;">Just a silly edit… until I realized I’d be proud standing beside you like this.</p>
+                    </div>
+                </div>
+            </div>
+
+            <p style="font-size: 0.9rem; margin-top: 10px; color: #999;">(Tap photos to see memories)</p>
+            <button class="nav-btn" onclick="turnPage(3, 4)">Next Page</button>
+        </div>
+
+        <div id="page-4" class="page">
+            <h2>Make a Wish</h2>
+            <p>Close your eyes...</p>
+
+            <div class="cake-plate">
+                <div class="cake-group">
+                    <div class="cupcake-base">
+                        <div class="cupcake-frosting"></div>
+                    </div>
+                    <div class="candle" id="candle">
+                        <div class="flame" id="flame"></div>
+                    </div>
+                    <div class="cherry" id="cherry" onclick="lightCandle()"></div>
+                </div>
+            </div>
+
+            <p id="candle-instruction">Tap the cherry to add a candle</p>
+            <button class="nav-btn" id="cake-next-btn" style="opacity: 0; pointer-events: none;"
+                onclick="turnPage(4, 5)">Wish Made &rarr;</button>
+        </div>
+
+        <div id="page-5" class="page">
+            <h2>Why I Love You</h2>
+            <p>Tap the stickers to reveal secrets.</p>
+            <div class="reasons-container">
+                <div class="reasons-grid">
+                    <div class="sticker"
+                        onclick="showReason(this, 'Your smile doesn’t just light up my darkest days… it makes me forget they were dark at all.')">
+                        ☀️</div>
+                    <div class="sticker"
+                        onclick="showReason(this, 'Your hugs feel like home. The kind of home I never want to leave.')">
+                        🧸</div>
+                    <div class="sticker"
+                        onclick="showReason(this, 'I love how sharp your mind is. You’re playful, but when it matters… you’re stronger and wiser than you even realize.')">
+                        🧠</div>
+                    <div class="sticker"
+                        onclick="showReason(this, 'You let me have the last slice… which is how I knew you were dangerously perfect for me XD.')">
+                        🍕</div>
+                </div>
+                <div id="reason-display" class="reason-display-area">
+                    (Select a sticker)
+                </div>
+            </div>
+            <button class="nav-btn" onclick="turnPage(5, 6)">Read Letter</button>
+        </div>
+
+        <div id="page-6" class="page" style="align-items: flex-start; text-align: left;">
+            <h2 style="align-self: center;">My Dearest,</h2>
+            <div style="width: 100%; height: 300px; overflow-y: auto; padding-right: 10px; font-style: italic;">
+                <p>Happy Birthday!</p>
+
+                <p>I don’t even know how to start this properly… because every time I try to put what I feel for you
+                    into words, it never feels enough.</p>
+
+                <p>This year with you changed me.</p>
+
+                <p>You came into my life playful, teasing, always pulling my leg… and somehow, without even trying, you
+                    became my safest place.</p>
+
+                <p>I love how you laugh at me.</p>
+
+                <p>I love how you act mature when I least expect it.</p>
+
+                <p>I love how you pretend to be strong even when you’ve been through things that would break most
+                    people.</p>
+
+                <p>And I need you to hear this clearly —</p>
+
+                <p>With me, you will never have to beg for love.</p>
+
+                <p>You will never have to prove you’re enough.</p>
+
+                <p>You will never have to feel like you’re too much.</p>
+
+                <p>I choose you.</p>
+
+                <p>Not because it’s easy.</p>
+
+                <p>Not because it’s convenient.</p>
+
+                <p>But because when I look at you, I see someone I don’t want to lose.</p>
+
+                <p>You don’t just matter to me.</p>
+
+                <p>You matter deeply.</p>
+
+                <p>On your birthday, I’m not just celebrating you turning a year older.</p>
+
+                <p>I’m celebrating the fact that I get to love you.</p>
+
+                <p>And I don’t say that lightly.</p>
+
+                <p>I love you. More than I probably show sometimes. More than I even know how to explain.</p>
+
+                <p>I love you.</p>
+
+                <p>And as long as I’m here, you will always be chosen.</p>
+
+                <p>Always mine.</p>
+
+                <p>Always safe.</p>
+
+                <p>Always us.</p>
+            </div>
+
+            <button class="nav-btn" style="align-self: center;" onclick="turnPage(6, 7)">One Last Surprise</button>
+        </div>
+
+
+        <div id="page-7" class="page">
+            <h2>A Little Gift</h2>
+            <div style="font-size: 5rem; cursor: pointer; transition: transform 0.5s;" id="gift-box"
+                onclick="openGift()">🎁</div>
+            <div id="gift-reveal" style="display: none; animation: fadeIn 1s;">
+                <img src="https://media.giphy.com/media/26BRv0ThflsHCqDrG/giphy.gif"
+                    style="width: 100%; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                <h3>I Love You! ❤️</h3>
+                <p>Can't wait to celebrate in person.</p>
+            </div>
+        </div>
+
+        <div class="music-player"><span>♫ Now Playing: Our Song</span></div>
+
+        <audio id="bg-music" loop>
+            <source src="music.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
+    <script>
+        // --- JAVASCRIPT ---
+
+        function turnPage(current, next) {
+            const currentPage = document.getElementById(`page-${current}`);
+            const nextPage = document.getElementById(`page-${next}`);
+            currentPage.classList.add('turned');
+            currentPage.classList.remove('active');
+            setTimeout(() => { nextPage.classList.add('active'); }, 300);
+        }
+
+        function unlockBook() {
+            const lock = document.querySelector('.heart-lock');
+            lock.innerHTML = '🔓';
+            const audio = document.getElementById('bg-music');
+            audio.volume = 0.5; // Set volume to 50% so it's not too loud
+            audio.play().catch(error => {
+                console.log("Audio play failed (usually waiting for interaction): " + error);
+            });
+            setTimeout(() => { turnPage(1, 2); }, 800);
+        }
+
+        // Updated Simple Flip Logic
+        function flipPhoto(card) {
+            // Simply toggle the 'flipped' class on the clicked card
+            card.classList.toggle('flipped');
+        }
+
+        let candleStep = 0;
+        function lightCandle() {
+            const candle = document.getElementById('candle');
+            const flame = document.getElementById('flame');
+            const instruction = document.getElementById('candle-instruction');
+            const nextBtn = document.getElementById('cake-next-btn');
+
+            if (candleStep === 0) {
+                candle.style.display = 'block';
+                instruction.innerText = "Now tap the flame to light it";
+                candleStep++;
+            } else if (candleStep === 1) {
+                flame.classList.add('lit');
+                document.body.classList.add('lights-out');
+                document.getElementById('fairy-lights').style.opacity = '1';
+                createFireflies();
+                instruction.innerText = "Happy Birthday, Beautiful.";
+                instruction.style.color = "#d4a5a5";
+                nextBtn.style.opacity = '1';
+                nextBtn.style.pointerEvents = 'all';
+                candleStep++;
+            }
+        }
+
+        function createFireflies() {
+            const container = document.getElementById('fairy-lights');
+            for (let i = 0; i < 30; i++) {
+                const light = document.createElement('div');
+                light.className = 'light';
+                light.style.left = Math.random() * 100 + '%';
+                light.style.top = Math.random() * 100 + '%';
+                light.style.animationDuration = (Math.random() * 5 + 3) + 's';
+                light.style.animationDelay = (Math.random() * 2) + 's';
+                container.appendChild(light);
+            }
+        }
+
+        function showReason(element, message) {
+            document.querySelectorAll('.sticker').forEach(s => s.classList.remove('active-sticker'));
+            element.classList.add('active-sticker');
+            const display = document.getElementById('reason-display');
+            display.style.opacity = '0';
+            setTimeout(() => {
+                display.innerText = message;
+                display.style.opacity = '1';
+            }, 300);
+        }
+
+        function openGift() {
+            const box = document.getElementById('gift-box');
+            const content = document.getElementById('gift-reveal');
+            box.style.transform = "scale(0) rotate(360deg)";
+            setTimeout(() => {
+                box.style.display = 'none';
+                content.style.display = 'block';
+                confetti({
+                    particleCount: 150, spread: 100, origin: { y: 0.6 },
+                    colors: ['#d4a5a5', '#fce4ec', '#fff']
+                });
+            }, 300);
+        }
+
+        function resetBook() { location.reload(); }
+    </script>
+</body>
+
+
+</html>
